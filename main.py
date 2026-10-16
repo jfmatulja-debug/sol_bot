@@ -25,15 +25,24 @@ client = genai.Client(api_key=GEMINI_KEY)
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto_usuario = update.message.text
     
-    try:
-        # Modelo oficial da SDK google-genai
-        response = client.models.generate_content(
-            model='gemini-3.8-flash',
-            contents=texto_usuario,
-        )
-        await update.message.reply_text(response.text)
-    except Exception as e:
-        await update.message.reply_text(f"Ocorreu um erro ao processar a resposta: {str(e)}")
+    # Lista de modelos por ordem de preferência (se um falhar/estiver lotado, tenta o seguinte)
+    modelos = ['gemini-3.8-flash', 'gemini-1.5-flash']
+    resposta_enviada = False
+
+    for modelo in modelos:
+        try:
+            response = client.models.generate_content(
+                model=modelo,
+                contents=texto_usuario,
+            )
+            await update.message.reply_text(response.text)
+            resposta_enviada = True
+            break
+        except Exception as e:
+            continue
+
+    if not resposta_enviada:
+        await update.message.reply_text("Os servidores do Gemini estão com alta demanda momentânea. Por favor, tente enviar a mensagem novamente em instantes.")
 
 if __name__ == "__main__":
     # Inicia o servidor Web em segundo plano
