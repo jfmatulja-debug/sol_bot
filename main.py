@@ -5,7 +5,7 @@ from google import genai
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-# 1. Servidor web simples para manter o Render ativo no plano Free
+# 1. Servidor web simples para o Render (plano Free)
 web_app = Flask(__name__)
 
 @web_app.route('/')
@@ -25,19 +25,17 @@ client = genai.Client(api_key=GEMINI_KEY)
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto_usuario = update.message.text
     
-    # Modelo atualizado e compativel
+    # Utilizando o modelo oficial suportado pela nova SDK google-genai
     response = client.models.generate_content(
-        model='gemini-1.5-flash',
+        model='gemini-2.0-flash',
         contents=texto_usuario,
     )
     
     await update.message.reply_text(response.text)
 
 if __name__ == "__main__":
-    # Inicia o servidor web em segundo plano
     threading.Thread(target=run_web, daemon=True).start()
     
-    # Inicia o bot do Telegram
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
     app.run_polling()
