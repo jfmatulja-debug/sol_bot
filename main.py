@@ -25,17 +25,16 @@ client = Groq(api_key=GROQ_KEY)
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto_usuario = update.message.text
     
-    # Múltiplos modelos da Groq para garantir que um deles responda
+    # Modelos ativas e oficiais da Groq
     modelos = [
         "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant",
-        "llama3-70b-8192",
-        "llama3-8b-8192",
-        "mixtral-8x7b-32768"
+        "llama-3.2-11b-vision-instruct",
+        "llama-3.2-3b-preview"
     ]
     
     resposta_enviada = False
-    ultimo_erro = ""
+    erros = []
 
     for modelo in modelos:
         try:
@@ -48,12 +47,12 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             resposta_enviada = True
             break
         except Exception as e:
-            ultimo_erro = str(e)
+            erros.append(f"{modelo}: {str(e)}")
             continue
 
     if not resposta_enviada:
-        # Mostra o erro exato direto no Telegram para resolvermos de vez
-        await update.message.reply_text(f"Erro na Groq: {ultimo_erro}")
+        msg_erro = "\n".join(erros[:2])
+        await update.message.reply_text(f"Erro ao conectar com os modelos Groq:\n{msg_erro}")
 
 if __name__ == "__main__":
     threading.Thread(target=run_web, daemon=True).start()
