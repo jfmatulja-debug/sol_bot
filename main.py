@@ -25,21 +25,35 @@ client = Groq(api_key=GROQ_KEY)
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto_usuario = update.message.text
     
-    try:
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": texto_usuario,
-                }
-            ],
-            model="llama-3.1-8b-instant",
-        )
-        resposta = chat_completion.choices[0].message.content
-        await update.message.reply_text(resposta)
-    except Exception as e:
-        print(f"Erro no Groq: {e}")
-        await update.message.reply_text("Erro ao processar a mensagem no servidor.")
+    # Múltiplos modelos da Groq para garantir que um deles responda
+    modelos = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "llama3-70b-8192",
+        "llama3-8b-8192",
+        "mixtral-8x7b-32768"
+    ]
+    
+    resposta_enviada = False
+    ultimo_erro = ""
+
+    for modelo in modelos:
+        try:
+            chat_completion = client.chat.completions.create(
+                messages=[{"role": "user", "content": texto_usuario}],
+                model=modelo,
+            )
+            resposta = chat_completion.choices[0].message.content
+            await update.message.reply_text(resposta)
+            resposta_enviada = True
+            break
+        except Exception as e:
+            ultimo_erro = str(e)
+            continue
+
+    if not resposta_enviada:
+        # Mostra o erro exato direto no Telegram para resolvermos de vez
+        await update.message.reply_text(f"Erro na Groq: {ultimo_erro}")
 
 if __name__ == "__main__":
     threading.Thread(target=run_web, daemon=True).start()
