@@ -5,7 +5,7 @@ from groq import Groq
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-# 1. Servidor web simples para o Render
+# 1. Servidor web simples para manter o Render ativo no plano Free
 web_app = Flask(__name__)
 
 @web_app.route('/')
@@ -25,10 +25,9 @@ client = Groq(api_key=GROQ_KEY)
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto_usuario = update.message.text
     
-    # Modelos padrão ativos na Groq
+    # Modelos oficiais e ativos na API da Groq
     modelos = [
-        "llama3-8b-8192",
-        "llama3-70b-8192",
+        "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant"
     ]
     
