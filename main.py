@@ -33,7 +33,7 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "content": texto_usuario,
                 }
             ],
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
         )
         resposta = chat_completion.choices[0].message.content
         await update.message.reply_text(resposta)
