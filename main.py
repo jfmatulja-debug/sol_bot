@@ -25,8 +25,16 @@ client = genai.Client(api_key=GEMINI_KEY)
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto_usuario = update.message.text
     
-    # Lista de modelos por ordem de preferência (se um falhar/estiver lotado, tenta o seguinte)
-    modelos = ['gemini-3.8-flash', 'gemini-1.5-flash']
+    # Lista de modelos por ordem de tentativa
+    # Se um falhar por cota, erro 503 ou 404, o bot tenta o próximo imediatamente
+    modelos = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-8b',
+        'gemini-1.5-pro'
+    ]
+    
     resposta_enviada = False
 
     for modelo in modelos:
@@ -35,14 +43,18 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 model=modelo,
                 contents=texto_usuario,
             )
-            await update.message.reply_text(response.text)
-            resposta_enviada = True
-            break
-        except Exception as e:
+            if response.text:
+                await update.message.reply_text(response.text)
+                resposta_enviada = True
+                break
+        except Exception:
+            # Se der erro no modelo atual (503, 404, cota, etc.), ignora e tenta o proximo
             continue
 
     if not resposta_enviada:
-        await update.message.reply_text("Os servidores do Gemini estão com alta demanda momentânea. Por favor, tente enviar a mensagem novamente em instantes.")
+        await update.message.reply_text(
+            "Desculpe, todos os modelos do Gemini estão temporariamente indisponíveis. Por favor, tente novamente em instantes."
+        )
 
 if __name__ == "__main__":
     # Inicia o servidor Web em segundo plano
