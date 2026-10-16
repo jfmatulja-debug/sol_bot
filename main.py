@@ -28,7 +28,7 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Modelo oficial da SDK google-genai
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.8-flash',
             contents=texto_usuario,
         )
         await update.message.reply_text(response.text)
