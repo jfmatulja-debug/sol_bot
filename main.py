@@ -5,7 +5,7 @@ from google import genai
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-# 1. Servidor web simples para manter o Render ativo no plano Free
+# 1. Servidor web simples para manter o Render ativo
 web_app = Flask(__name__)
 
 @web_app.route('/')
@@ -25,17 +25,14 @@ client = genai.Client(api_key=GEMINI_KEY)
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto_usuario = update.message.text
     
-    # Lista de modelos por ordem de tentativa
-    # Se um falhar por cota, erro 503 ou 404, o bot tenta o próximo imediatamente
+    # Lista de modelos oficiais compativeis com a SDK google-genai
     modelos = [
         'gemini-2.5-flash',
-        'gemini-2.0-flash',
         'gemini-1.5-flash',
-        'gemini-1.5-flash-8b',
-        'gemini-1.5-pro'
+        'gemini-2.5-pro'
     ]
     
-    resposta_enviada = False
+    resposta_texto = None
 
     for modelo in modelos:
         try:
@@ -43,17 +40,19 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 model=modelo,
                 contents=texto_usuario,
             )
-            if response.text:
-                await update.message.reply_text(response.text)
-                resposta_enviada = True
+            if response and response.text:
+                resposta_texto = response.text
                 break
-        except Exception:
-            # Se der erro no modelo atual (503, 404, cota, etc.), ignora e tenta o proximo
+        except Exception as err:
+            # Imprime o erro real no log do Render para diagnostico
+            print(f"Erro no modelo {modelo}: {err}")
             continue
 
-    if not resposta_enviada:
+    if resposta_texto:
+        await update.message.reply_text(resposta_texto)
+    else:
         await update.message.reply_text(
-            "Desculpe, todos os modelos do Gemini estão temporariamente indisponíveis. Por favor, tente novamente em instantes."
+            "Não foi possível obter resposta no momento. Por favor, tente novamente em instantes."
         )
 
 if __name__ == "__main__":
